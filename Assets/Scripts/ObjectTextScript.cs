@@ -16,6 +16,7 @@ public class ObjectTextScript : MonoBehaviour {
 	public float secondsBetweenSentences;
 	public float secondsBetweenObjects;
 	public float grabDistance;
+	public GameObject[] objectLocations;
 
 	private Text tutorialText;
 	private Text objectText;
@@ -35,11 +36,15 @@ public class ObjectTextScript : MonoBehaviour {
 		tutorialText.text = givingTutorial ? tutorialSentences [0] : "";
 		objectText.text = givingTutorial ? "" : objectsToSpawn [0].name;
 		activeObject = givingTutorial ? null : GameObject.Instantiate (objectsToSpawn [0]);
+		if (!givingTutorial) {
+			activeObject.AddComponent<Rigidbody> ();
+			activeObject.GetComponent<Rigidbody> ().useGravity = false;
+			activeObject.GetComponent<Rigidbody> ().isKinematic = true;
+		}
 	}
 	
 	// Update is called once per frame
 	void Update () {
-		print (timer);
 		if (Input.GetButtonDown ("TutorialScene")) {
 			tutorialScene = true;
 			SceneManager.LoadScene (SceneManager.GetActiveScene().name);
@@ -51,6 +56,7 @@ public class ObjectTextScript : MonoBehaviour {
 		if (givingTutorial) {
 			tutorialStep ();
 		} else {
+			//print ("Object step");
 			objectStep ();
 		}
 	}
@@ -61,6 +67,9 @@ public class ObjectTextScript : MonoBehaviour {
 				givingTutorial = false;
 				index = 0;
 				activeObject = GameObject.Instantiate (objectsToSpawn [0]);
+				activeObject.AddComponent<Rigidbody> ();
+				activeObject.GetComponent<Rigidbody> ().useGravity = false;
+				activeObject.GetComponent<Rigidbody> ().isKinematic = true;
 				timer = secondsBetweenObjects;
 				tutorialText.text = "";
 				objectText.text = activeObject.name;
@@ -76,11 +85,13 @@ public class ObjectTextScript : MonoBehaviour {
 
 	void objectStep() {
 		if (activeObject != null) {
-			activeObject.transform.position = hand.transform.position;
-			activeObject.transform.rotation = hand.transform.rotation;
+			activeObject.GetComponent<Rigidbody> ().MovePosition (hand.transform.position);
+			activeObject.GetComponent<Rigidbody> ().MoveRotation (hand.transform.rotation);
 			if (Input.GetButtonDown ("Fire1")) {
-				lastActive = activeObject;
-				activeObject = null;
+				if (activeObject.CompareTag (index.ToString ())) {
+					lastActive = activeObject;
+					activeObject = null;
+				}
 			}
 		} else {
 			if (Input.GetButtonDown("Fire1") && Vector3.Distance (lastActive.transform.position, hand.transform.position) < grabDistance) {
@@ -92,9 +103,15 @@ public class ObjectTextScript : MonoBehaviour {
 		}
 		if (timer <= 0) {
 			if (index < objectsToSpawn.Length) {
+				if (!activeObject.CompareTag (index.ToString ())) {
+					activeObject.transform.position = objectLocations [index].transform.position;
+				}
 				index++;
 				objectText.text = objectsToSpawn[index].name;
 				activeObject = GameObject.Instantiate (objectsToSpawn [index]);
+				activeObject.AddComponent<Rigidbody> ();
+				activeObject.GetComponent<Rigidbody> ().useGravity = false;
+				activeObject.GetComponent<Rigidbody> ().isKinematic = true;
 				timer = secondsBetweenObjects;
 			}
 		} else {
