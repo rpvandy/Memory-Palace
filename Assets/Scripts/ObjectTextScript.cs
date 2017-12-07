@@ -8,7 +8,7 @@ public class ObjectTextScript : MonoBehaviour {
 
 	private static bool tutorialScene = true;
 
-	public GameObject hand;
+	public OVRInput.Controller controller;
 	public string[] tutorialSentences;
 	public GameObject[] objectsToSpawn;
 	public GameObject objectTextField;
@@ -29,6 +29,7 @@ public class ObjectTextScript : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
+		shuffleObjects ();
 		tutorialText = tutorialTextField.GetComponent<Text> ();
 		objectText = objectTextField.GetComponent<Text>();
 		givingTutorial = tutorialScene;
@@ -56,7 +57,6 @@ public class ObjectTextScript : MonoBehaviour {
 		if (givingTutorial) {
 			tutorialStep ();
 		} else {
-			//print ("Object step");
 			objectStep ();
 		}
 	}
@@ -85,20 +85,20 @@ public class ObjectTextScript : MonoBehaviour {
 
 	void objectStep() {
 		if (activeObject != null) {
-			activeObject.GetComponent<Rigidbody> ().MovePosition (hand.transform.position);
-			activeObject.GetComponent<Rigidbody> ().MoveRotation (hand.transform.rotation);
-			if (Input.GetButtonDown ("Fire1")) {
+			activeObject.GetComponent<Rigidbody> ().MovePosition (OVRInput.GetLocalControllerPosition (controller));
+			activeObject.GetComponent<Rigidbody> ().MoveRotation (OVRInput.GetLocalControllerRotation (controller));
+			if (Input.GetButtonDown ("Fire1") || Input.GetAxis("RHandTrigger") == 1) {
 				if (activeObject.CompareTag (index.ToString ())) {
 					lastActive = activeObject;
 					activeObject = null;
 				}
 			}
 		} else {
-			if (Input.GetButtonDown("Fire1") && Vector3.Distance (lastActive.transform.position, hand.transform.position) < grabDistance) {
+			if ((Input.GetButtonDown ("Fire1") || Input.GetAxis("RHandTrigger") == 1) && Vector3.Distance (lastActive.transform.position, OVRInput.GetLocalControllerPosition (controller)) < grabDistance) {
 				activeObject = lastActive;
 				lastActive = null;
-				activeObject.transform.position = hand.transform.position;
-				activeObject.transform.rotation = hand.transform.rotation;
+				activeObject.transform.position = OVRInput.GetLocalControllerPosition (controller);
+				activeObject.transform.rotation = OVRInput.GetLocalControllerRotation (controller);
 			}
 		}
 		if (timer <= 0) {
@@ -116,6 +116,18 @@ public class ObjectTextScript : MonoBehaviour {
 			}
 		} else {
 			timer -= Time.deltaTime;
+		}
+	}
+
+	void shuffleObjects() {
+		int objects = objectsToSpawn.Length;
+		int swapIndex;
+		while (objects > 0) {
+			swapIndex = Mathf.FloorToInt (Random.value * objects);
+			objects--;
+			GameObject temp = objectsToSpawn [objects];
+			objectsToSpawn [objects] = objectsToSpawn [swapIndex];
+			objectsToSpawn [swapIndex] = temp;
 		}
 	}
 }
