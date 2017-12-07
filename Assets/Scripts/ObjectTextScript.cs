@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
+using System.Text.RegularExpressions;
 
 public class ObjectTextScript : MonoBehaviour {
 
@@ -10,9 +11,11 @@ public class ObjectTextScript : MonoBehaviour {
 
 	public OVRInput.Controller controller;
 	public string[] tutorialSentences;
-	public GameObject[] objectsToSpawn;
+	public GameObject[] objectSet1;
+	public GameObject[] objectSet2;
 	public GameObject objectTextField;
 	public GameObject tutorialTextField;
+	public GameObject blinder;
 	public float secondsBetweenSentences;
 	public float secondsBetweenObjects;
 	public float grabDistance;
@@ -20,7 +23,7 @@ public class ObjectTextScript : MonoBehaviour {
 
 	private Text tutorialText;
 	private Text objectText;
-
+	private GameObject[] objectsToSpawn;
 	private GameObject activeObject;
 	private GameObject lastActive = null;
 	private float timer;
@@ -29,19 +32,24 @@ public class ObjectTextScript : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
+		objectsToSpawn = givingTutorial ? objectSet1 : objectSet2;
 		shuffleObjects ();
 		tutorialText = tutorialTextField.GetComponent<Text> ();
 		objectText = objectTextField.GetComponent<Text>();
 		givingTutorial = tutorialScene;
 		timer = givingTutorial ? secondsBetweenSentences : secondsBetweenObjects;
-		tutorialText.text = givingTutorial ? tutorialSentences [0] : "";
-		objectText.text = givingTutorial ? "" : objectsToSpawn [0].name;
+		tutorialText.text = givingTutorial ? (tutorialSentences.Length > 0 ? tutorialSentences[0] : "") : "";
+		objectText.text = givingTutorial ? "" : Regex.Replace(objectsToSpawn [0].name, @"\(.*\)", "");
 		activeObject = givingTutorial ? null : GameObject.Instantiate (objectsToSpawn [0]);
 		if (!givingTutorial) {
 			activeObject.AddComponent<Rigidbody> ();
 			activeObject.GetComponent<Rigidbody> ().useGravity = false;
 			activeObject.GetComponent<Rigidbody> ().isKinematic = true;
 		}
+		for (int i = 0; i < objectLocations.Length; i++) {
+			objectLocations [i].SetActive (false);
+		}
+		blinder.SetActive (false);
 	}
 	
 	// Update is called once per frame
@@ -70,9 +78,10 @@ public class ObjectTextScript : MonoBehaviour {
 				activeObject.AddComponent<Rigidbody> ();
 				activeObject.GetComponent<Rigidbody> ().useGravity = false;
 				activeObject.GetComponent<Rigidbody> ().isKinematic = true;
+				objectLocations [0].SetActive (true);
 				timer = secondsBetweenObjects;
 				tutorialText.text = "";
-				objectText.text = activeObject.name;
+				objectText.text = Regex.Replace(activeObject.name,  @"\(.*\)", "");
 			} else {
 				index++;
 				tutorialText.text = tutorialSentences [index];
@@ -102,17 +111,21 @@ public class ObjectTextScript : MonoBehaviour {
 			}
 		}
 		if (timer <= 0) {
-			if (index < objectsToSpawn.Length) {
+			if (index < objectsToSpawn.Length && index < objectLocations.Length) {
 				if (!activeObject.CompareTag (index.ToString ())) {
 					activeObject.transform.position = objectLocations [index].transform.position;
 				}
+				objectLocations [index].SetActive (false);
 				index++;
-				objectText.text = objectsToSpawn[index].name;
+				objectLocations [index].SetActive (true);
+				objectText.text = Regex.Replace (objectsToSpawn [index].name, @"\(.*\)", "");
 				activeObject = GameObject.Instantiate (objectsToSpawn [index]);
 				activeObject.AddComponent<Rigidbody> ();
 				activeObject.GetComponent<Rigidbody> ().useGravity = false;
 				activeObject.GetComponent<Rigidbody> ().isKinematic = true;
 				timer = secondsBetweenObjects;
+			} else {
+				blinder.SetActive (true);
 			}
 		} else {
 			timer -= Time.deltaTime;
