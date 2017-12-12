@@ -904,7 +904,7 @@ MonoBehaviour:
   tutorialTextField: {fileID: 1233185794}
   blinder: {fileID: 1826121455}
   secondsBetweenSentences: 1
-  secondsBetweenObjects: 5
+  secondsBetweenObjects: 20
   grabDistance: 10
   objectLocations:
   - {fileID: 418157542}
